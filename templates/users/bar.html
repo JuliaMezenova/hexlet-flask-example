@@ -1,0 +1,14 @@
+<!-- templates/bar.html -->
+<!doctype html>
+<html>
+  <body>
+    <p>Users</p>
+    {% if messages %}
+      <ul class=flashes>
+      {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  </body>
+</html>
