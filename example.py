@@ -1,21 +1,28 @@
 from flask import Flask, render_template, request, redirect, flash, get_flashed_messages, url_for
 import json
 from validator import validate
+import os
 
 app = Flask(__name__)
+#app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+import secrets
+
+secret = secrets.token_urlsafe(32)
+
+app.secret_key = secret
 
 
 @app.route('/')
 def hello_world():
     return 'Welcome to Flask, our dear friends!'
 
-@app.get('/users')
-def users_get():
-    return 'GET /users'
+#@app.get('/users')
+#def users_get():
+#    return 'GET /users'
 
-@app.post('/users')
-def users():
-    return 'Users', 302
+#@app.post('/users')
+#def users():
+#    return 'Users', 302
 
 @app.route('/courses/<id>')
 def courses(id):
@@ -31,24 +38,23 @@ def get_user(id):
         )        
 
 
-@app.route('/users/')
+@app.get('/users')
 def search_users():
     #users = ['mike', 'mishel', 'adel', 'keks', 'kamila']
-    f = open('data.json').read()
-    users = json.loads(f)
+    messages = get_flashed_messages(with_categories=True)
+    with open('data.json', 'r') as f:
+        users = json.loads(f.read())
     term = request.args.get('term')
     filtered_users = []
     for user in users:
         if str(term) in user:
             filtered_users.append(user)
-    messages = get_flashed_messages(with_categories=True)
-    print(messages)
     return render_template(
         'users/index.html',
         users=filtered_users,
         search=term,
-        messsages=messages,
-        )
+        messages=messages,
+    )
 
 
 @app.route('/users/new')
@@ -73,7 +79,7 @@ def users_post():
             user=user,
             errors=errors,
             ), 422
-    with open('data.json', 'w') as file_for_saving:
-        json.dumps(user)
+    with open('data.json', 'w') as f:
+        json.dump(user, f)
     flash('Вы добавлены успешно!', 'success')
     return redirect(url_for('search_users'), code=302)
