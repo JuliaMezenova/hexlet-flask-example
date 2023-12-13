@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, flash, get_flashed_messages, url_for
 import json
+from validator import validate
 
 app = Flask(__name__)
 
@@ -21,16 +22,20 @@ def courses(id):
     return f'Course id: {id}'
 
 @app.route('/users/<id>')
-def get_users(id):
+def get_user(id):
+    if not user:
+        return 'Page not found', 404
     return render_template(
         'users/show.html',
         name=id,
-    )
+        )        
 
 
 @app.route('/users/')
 def search_users():
-    users = ['mike', 'mishel', 'adel', 'keks', 'kamila']
+    #users = ['mike', 'mishel', 'adel', 'keks', 'kamila']
+    f = open('data.json').read()
+    users = json.loads(f)
     term = request.args.get('term')
     filtered_users = []
     for user in users:
@@ -41,29 +46,34 @@ def search_users():
     return render_template(
         'users/index.html',
         users=filtered_users,
-        user=user,
         search=term,
         messsages=messages,
-    )
+        )
 
 
 @app.route('/users/new')
 def users_new():
     user = {'nickname': '',
             'email': ''}
+    errors = {}
     return render_template(
         'users/new.html',
         user=user,
+        errors=errors,
     )
+
 
 @app.post('/users')
 def users_post():
     user = request.form.to_dict()
+    errors = validate(user)
+    if errors:
+        return render_template(
+            'users/new.html',
+            user=user,
+            errors=errors,
+            ), 422
     with open('data.json', 'w') as file_for_saving:
         json.dumps(user)
-    #messages = get_flashed_messages(with_categories=True)
-    #print(messages)
     flash('Вы добавлены успешно!', 'success')
-    return redirect(url_for('search_users'))
-
-
+    return redirect(url_for('search_users'), code=302)

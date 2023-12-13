@@ -6,15 +6,21 @@
   <form action="/users" method="post">
     <div>
       <label>
-        Nickname:
+        Nickname *:
         <input type="text" required name="nickname">
-       </label>
+      </label>
+      {% if errors['nickname'] %}
+        <div>{{ errors['nickname'] }}</div>
+      {% endif %}
     </div>
     <div>
       <label>
-        Email:
+        Email *:
         <input type="email" required name="email">
       </label>
+      {% if errors['email'] %}
+        <div>{{ errors['email'] }}</div>
+      {% endif %}
     </div>
     <input type="submit" value="Submit">
   </form>
