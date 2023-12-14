@@ -47,7 +47,7 @@ def search_users():
     term = request.args.get('term')
     filtered_users = []
     for user in users:
-        if str(term) in user:
+        if str(term).lower() in user['nickname'].lower():
             filtered_users.append(user)
     return render_template(
         'users/index.html',
@@ -79,7 +79,14 @@ def users_post():
             user=user,
             errors=errors,
             ), 422
-    with open('data.json', 'w') as f:
-        json.dump(user, f)
+
+    with open("data.json", "r") as f:
+        users = json.loads(f.read())
+    users.append(user)
+    with open("data.json", "w") as f:
+        f.write(json.dumps(users))
+    
     flash('Вы добавлены успешно!', 'success')
     return redirect(url_for('search_users'), code=302)
+
+
