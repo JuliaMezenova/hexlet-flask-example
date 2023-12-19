@@ -1,4 +1,14 @@
-from flask import Flask, render_template, request, redirect, flash, get_flashed_messages, url_for
+from flask import (
+        Flask,
+        render_template,
+        request,
+        redirect,
+        flash,
+        get_flashed_messages,
+        url_for,
+        make_response,
+        session,
+        )
 import json
 from validator import validate
 import os
@@ -16,22 +26,12 @@ app.secret_key = secret
 def hello_world():
     return render_template('users/start_page.html')
 
-#@app.get('/users')
-#def users_get():
-#    return 'GET /users'
-
-#@app.post('/users')
-#def users():
-#    return 'Users', 302
-
-@app.route('/courses/<id>')
-def courses(id):
-    return f'Course id: {id}'
 
 @app.route('/users/<id>')
 def get_user(id):
-    with open("data.json", "r") as f:
-        users = json.loads(f.read())
+    #with open("users.json", "r") as f:
+    #    users = json.loads(f.read())
+    users = json.loads(request.cookies.get('users', json.dumps([])))
     for user in users:
         if user['nickname'] == id:
             return render_template(
@@ -45,8 +45,9 @@ def get_user(id):
 def search_users():
     #users = ['mike', 'mishel', 'adel', 'keks', 'kamila']
     messages = get_flashed_messages(with_categories=True)
-    with open('data.json', 'r') as f:
-        users = json.loads(f.read())
+    #with open('users.json', 'r') as f:
+    #    users = json.loads(f.read())
+    users = json.loads(request.cookies.get('users', json.dumps([])))
     term = request.args.get('term')
     filtered_users = []
     for user in users:
@@ -84,21 +85,26 @@ def users_post():
             errors=errors,
             ), 422
 
-    with open("data.json", "r") as f:
-        users = json.loads(f.read())
+    #with open("users.json", "r") as f:
+    #    users = json.loads(f.read())
+    users = json.loads(request.cookies.get('users', json.dumps([])))
     users.append(data)
-    with open("data.json", "w") as f:
-        f.write(json.dumps(users))
+    #with open("users.json", "w") as f:
+    #    f.write(json.dumps(users))
     
     flash(f"{user['nickname']}, Вы добавлены успешно!", 'success')
-    return redirect(url_for('search_users'), code=302)
-
+    #return redirect(url_for('search_users'), code=302)
+    encoded_users = json.dumps(users)
+    response = make_response(redirect(url_for('search_users')))
+    response.set_cookie('users', encoded_users)
+    return response
 
 @app.route('/users/<id>/update', methods=['GET', 'POST'])
 def user_update(id):
     errors = {}
-    with open('data.json') as f:
-        users = json.loads(f.read())
+    #with open('users.json') as f:
+    #    users = json.loads(f.read())
+    users = json.loads(request.cookies.get('users', json.dumps([])))
     filtered_users = filter(lambda user: user['nickname'] == id, users)
     user=next(filtered_users, None)
 
@@ -120,20 +126,48 @@ def user_update(id):
         index_of_user_to_update = users.index(user)
         user.update(data)
         users[index_of_user_to_update] = user
-        with open("data.json", "w") as f:
-            f.write(json.dumps(users))
+        #with open("users.json", "w") as f:
+        #    f.write(json.dumps(users))
         flash('User has been updated', 'success')
-        return redirect(url_for('get_user', id=user['nickname']), code=302)
+        #return redirect(url_for('get_user', id=user['nickname']), code=302)
+        encoded_users = json.dumps(users)
+        response = make_response(redirect(url_for('search_users')))
+        response.set_cookie('users', encoded_users)
+        return response
 
 
 @app.route('/users/<id>/delete', methods=['POST'])
 def delete_user(id):
-    with open("data.json",'r') as f:
-        users = json.loads(f.read())
+    #with open("users.json",'r') as f:
+    #    users = json.loads(f.read())
+    users = json.loads(request.cookies.get('users', json.dumps([])))
     filtered_users = filter(lambda user: user['nickname'] == id, users)
     user=next(filtered_users, None)
     users.remove(user)
-    with open("data.json","w") as f:
-        f.write(json.dumps(users))
+    #with open("users.json","w") as f:
+    #    f.write(json.dumps(users))
     flash('User has been deleted', 'success')
-    return redirect(url_for('search_users'))
+    #return redirect(url_for('search_users'))
+    encoded_users = json.dumps(users)
+    response = make_response(redirect(url_for('search_users')))
+    response.set_cookie('users', encoded_users)
+    return response
+
+
+@app.route('/login', methods = ['POST', 'GET'])
+def user_login():
+    messages = get_flashed_messages(with_categories=True)
+    session_status = 0
+    users = json.loads(request.cookies.get('users', json.dumps([])))
+    email = request.form.get('email', '', type=str)
+    session['users'] = []
+    for user in users:
+        #print(f"{user['tel']} {tel}")
+        if str(email) == user['email']:
+            session['users'].append(user)
+            session_status = 1
+            flash(f"{user['nickname']} is successfully logged in!")
+            return redirect(url_for('search_users'))
+    flash("Sorry, no such user...")
+    return render_template('users/start_page.html', messages=messages)
+
