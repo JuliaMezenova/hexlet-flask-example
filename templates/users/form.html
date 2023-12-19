@@ -1,0 +1,18 @@
+<div>
+  <label>
+    Nickname *:
+    <input type="text" name="nickname" value="{{ user.nickname|default('') }}">
+  </label>
+  {% if errors.nickname %}}
+    <div>{{ errors.nickname }}</div>
+  {% endif %}
+</div>
+<div>
+  <label>
+    Email *:
+    <input type="text" name="email" value="{{ user.email|default('') }}">
+  </label>					  
+  {% if errors.email %}
+    <div>{{ errors.email }}</div>
+  {% endif %}
+</div>

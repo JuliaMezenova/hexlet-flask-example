@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Example application</title>
+  </head>
+  <body>
+    <a href="{{ url_for('search_users') }}">Search Users</a>
+    <form action="{{ url_for('user_update', id=user.nickname) }}" method="post">  
+      {% include "users/form.html" %}
+      <input type="submit" value="Update">
+    </form>
+  </body>
+</html>

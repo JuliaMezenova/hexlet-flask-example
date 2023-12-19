@@ -1,29 +1,14 @@
 <!-- templates/users/new.html -->
 <!doctype html>
 <html>
-  <h1>New User</h1>
-
-  <form action="/users" method="post">
-    <div>
-      <label>
-        Nickname *:
-        <input type="text" required name="nickname">
-      </label>
-      {% if errors['nickname'] %}
-        <div>{{ errors['nickname'] }}</div>
-      {% endif %}
-    </div>
-    <div>
-      <label>
-        Email *:
-        <input type="email" required name="email">
-      </label>
-      {% if errors['email'] %}
-        <div>{{ errors['email'] }}</div>
-      {% endif %}
-    </div>
-    <input type="submit" value="Submit">
+  <body>
+    <a href="{{ url_for('search_users') }}">Search Users</a>
+    <h1>New User</h1>
+    
+    <form action="{{ url_for('search_users') }}" method="post">
+    {% include "users/form.html" %}
+    <input type="submit" value="Create">
   </form>
-
+  </body>
 </html>
 	

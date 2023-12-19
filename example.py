@@ -14,7 +14,7 @@ app.secret_key = secret
 
 @app.route('/')
 def hello_world():
-    return 'Welcome to Flask, our dear friends!'
+    return render_template('users/start_page.html')
 
 #@app.get('/users')
 #def users_get():
@@ -30,13 +30,16 @@ def courses(id):
 
 @app.route('/users/<id>')
 def get_user(id):
+    with open("data.json", "r") as f:
+        users = json.loads(f.read())
+    for user in users:
+        if user['nickname'] == id:
+            return render_template(
+                'users/show.html',
+                user=user,
+                )        
     if not user:
         return 'Page not found', 404
-    return render_template(
-        'users/show.html',
-        name=id,
-        )        
-
 
 @app.get('/users')
 def search_users():
@@ -71,22 +74,66 @@ def users_new():
 
 @app.post('/users')
 def users_post():
-    user = request.form.to_dict()
-    errors = validate(user)
+    data = request.form.to_dict()
+    errors = validate(data)
+    user = data
     if errors:
         return render_template(
             'users/new.html',
-            user=user,
+            user=data,
             errors=errors,
             ), 422
 
     with open("data.json", "r") as f:
         users = json.loads(f.read())
-    users.append(user)
+    users.append(data)
     with open("data.json", "w") as f:
         f.write(json.dumps(users))
     
-    flash('Вы добавлены успешно!', 'success')
+    flash(f"{user['nickname']}, Вы добавлены успешно!", 'success')
     return redirect(url_for('search_users'), code=302)
 
 
+@app.route('/users/<id>/update', methods=['GET', 'POST'])
+def user_update(id):
+    errors = {}
+    with open('data.json') as f:
+        users = json.loads(f.read())
+    filtered_users = filter(lambda user: user['nickname'] == id, users)
+    user=next(filtered_users, None)
+
+    if request.method == 'GET':
+        return render_template(
+            'users/edit.html',
+            user=user,
+            errors=errors,
+            )
+    if request.method == 'POST':
+        data = request.form.to_dict()
+        errors = validate(data)
+        if errors:
+            return render_template(
+                'users/edit.html',
+                user=user,
+                errors=errors,
+            ), 422
+        index_of_user_to_update = users.index(user)
+        user.update(data)
+        users[index_of_user_to_update] = user
+        with open("data.json", "w") as f:
+            f.write(json.dumps(users))
+        flash('User has been updated', 'success')
+        return redirect(url_for('get_user', id=user['nickname']), code=302)
+
+
+@app.route('/users/<id>/delete', methods=['POST'])
+def delete_user(id):
+    with open("data.json",'r') as f:
+        users = json.loads(f.read())
+    filtered_users = filter(lambda user: user['nickname'] == id, users)
+    user=next(filtered_users, None)
+    users.remove(user)
+    with open("data.json","w") as f:
+        f.write(json.dumps(users))
+    flash('User has been deleted', 'success')
+    return redirect(url_for('search_users'))
